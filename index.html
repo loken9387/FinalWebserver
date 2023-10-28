@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MQTT Web GUI</title>
+    <!-- Include Bootstrap CSS for styling -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Include Chart.js for graphing -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>MQTT Web GUI</h2>
+
+        <!-- Graph canvas -->
+        <canvas id="myChart" width="400" height="200"></canvas>
+
+        <!-- Range inputs -->
+        <label for="rangeStart">Start:</label>
+        <input type="number" id="rangeStart" value="0">
+        <label for="rangeEnd">End:</label>
+        <input type="number" id="rangeEnd" value="100">
+        <button onclick="updateGraphRange()">Update Range</button>
+
+        <!-- Node input fields and buttons -->
+        {% for node_id, node_data in nodes.items() %}
+        <div>
+            <h3>Node ID: {{ node_id }}</h3>
+            Value 1: <input type="text" id="value1_{{ node_id }}" placeholder="Enter value 1">
+            Value 2: <input type="text" id="value2_{{ node_id }}" placeholder="Enter value 2">
+            <button onclick="sendData('{{ node_id }}')">Send Data</button>
+        </div>
+        {% endfor %}
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script>
+        // Initialize the graph
+        let ctx = document.getElementById('myChart').getContext('2d');
+        let myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [], // This will be your x-axis data (e.g., time)
+                datasets: [{
+                    label: 'Data',
+                    data: [], // This will be your y-axis data
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1,
+                    fill: false
+                }]
+            }
+        });
+
+        function sendData(node_id) {
+            let value1 = document.getElementById("value1_" + node_id).value;
+            let value2 = document.getElementById("value2_" + node_id).value;
+
+            fetch('/send_data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `node_id=${node_id}&value1=${value1}&value2=${value2}`
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data.message);
+                });
+        }
+
+        function updateGraphRange() {
+            let start = parseInt(document.getElementById('rangeStart').value);
+            let end = parseInt(document.getElementById('rangeEnd').value);
+            // Update the graph's data based on the range
+            // For example, filter the data and update the graph's data property
+            myChart.data.labels = myChart.data.labels.filter(label => label >= start && label <= end);
+            myChart.data.datasets[0].data = myChart.data.datasets[0].data.filter(data => data >= start && data <= end);
+            myChart.update();
+        }
+    </script>
+</body>
+</html>
