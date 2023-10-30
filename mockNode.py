@@ -1,6 +1,10 @@
 import paho.mqtt.client as mqtt
 import time
 import json
+import random
+
+from webserver import RECEIVE_TOPIC
+
 
 BROKER_ADDRESS = "test.mosquitto.org"
 SEND_TOPIC = "test/receive_topic"
@@ -19,15 +23,29 @@ client.on_message = on_message
 client.subscribe(RESPONSE_TOPIC)
 
 # Send init message
-init_payload = json.dumps({"node_id": NODE_ID, "location": "poop"})
-client.publish(INIT_TOPIC, init_payload, retain=False)
-print(f"Sent init message with ID: {NODE_ID}")
+# Mock data for Device
+device_data = {
+    "name": "MockDevice",
+    "location": "MockLocation",
+    "interval": random.randint(5, 15),
+    "messages_count": 0,
+    "received_messages": 0
+}
+
+client.publish(INIT_TOPIC, json.dumps(device_data), retain=False)
+tmp = random.randint(123456, 123456789)
+print(f"Sent init message with ID: {tmp}")
 
 while True:
     # Mock data
-    payload = json.dumps({"temperature": 23.4, "humidity": 56.7})
-    client.publish(SEND_TOPIC, payload, retain=False)
-    print(f"Sent data: {payload}")
+    temperature_data = {
+        "device_id": "MockDeviceID",
+        "temp1": random.uniform(20.0, 30.0),
+        "temp2": random.uniform(20.0, 30.0)
+    }
+    
+    client.publish(RECEIVE_TOPIC, json.dumps(temperature_data), retain=False)
+    print(f"Sent data: {temperature_data}")
 
     # Listen for a short duration to get the response
     client.loop(timeout=1.0)

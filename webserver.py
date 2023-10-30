@@ -1,3 +1,4 @@
+from struct import pack
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
@@ -44,10 +45,10 @@ class Device(db.Model):
     messages_count = db.Column(db.Integer)
     received_messages = db.Column(db.Integer)
 
-class Data(db.Model):
+class TemperatureData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     device_id = db.Column(db.Integer, db.ForeignKey('device.id'))
-    device = db.relationship('Device', backref=db.backref('temperature_data', lazy=True))
+    #device = db.relationship('Device', backref=db.backref('temperature_data', lazy=True))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     temp1 = db.Column(db.Float)
     temp2 = db.Column(db.Float)
@@ -57,13 +58,34 @@ class Data(db.Model):
 def on_message(client, userdata, message, pipe_end):
     topic = message.topic
     payload = message.payload.decode()
+    data = json.loads(payload)
 
     if topic == INIT_TOPIC:
-        node_id = json.loads(payload)["node_id"]
+        with app.app_context():
+            device = Device(
+                name=data.get("name"),
+                location=data.get("location"),
+                last_message_received=datetime.utcnow(),
+                interval=data.get("interval", 0),
+                messages_count=data.get("messages_count", 0),
+                received_messages=data.get("received_messages", 0)
+            )
+            db.session.add(device)
+            db.session.commit()
+
+        node_id = json.loads(payload)["name"]
         location = json.loads(payload)["location"]
         NODES[node_id] = location
-    else:
-        print("TESTING")
+    elif topic == RECEIVE_TOPIC:
+        with app.app_context():
+            temperature_data = TemperatureData(
+                device_id=data.get("device_id"),
+                temp1=data.get("temp1"),
+                temp2=data.get("temp2")
+            )
+            db.session.add(temperature_data)
+            db.session.commit()
+        
 
     print(f"Received message: {payload} on topic {message.topic}")
     socketio.emit('new_message', {'message': payload})    
