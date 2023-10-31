@@ -70,6 +70,6 @@ jobs:
           app-name: 'BoeingFunction'
           slot-name: 'Production'
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_6AF5BFE0C03D4A35B825AD84D1E44469 }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_BE86E092E73B4B2482982BB0F9A412EB }}
           scm-do-build-during-deployment: true
           enable-oryx-build: true
